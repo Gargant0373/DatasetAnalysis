@@ -1,9 +1,9 @@
-import src.data_service as ds
+import data_service as ds
 import argparse
 import csv
 import os
 from datetime import datetime
-from src.analyzers.manager import AnalysisManager
+from analyzers.manager import AnalysisManager
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Process and display dataset information')

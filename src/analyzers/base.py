@@ -88,10 +88,10 @@ class AnalyzerRegistry:
         Discover and register all analyzer classes in the analyzers package.
         """
         # Import the analyzers package
-        import src.analyzers
+        import analyzers
         
         # Discover all modules in the analyzers package
-        for _, name, is_pkg in pkgutil.iter_modules(src.analyzers.__path__, src.analyzers.__name__ + '.'):
+        for _, name, is_pkg in pkgutil.iter_modules(analyzers.__path__, analyzers.__name__ + '.'):
             if not is_pkg:  # Skip packages, only import modules
                 try:
                     # Import the module

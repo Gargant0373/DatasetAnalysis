@@ -1,7 +1,7 @@
 import os
 from typing import Dict, Any, List, Optional
 
-from src.analyzers.base import AnalyzerRegistry
+from analyzers.base import AnalyzerRegistry
 
 class AnalysisManager:
     """

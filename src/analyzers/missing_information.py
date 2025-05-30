@@ -4,7 +4,7 @@ Analyzer for detecting missing information in dataset fields.
 import os
 from typing import Dict, Any, List
 
-from src.analyzers.base import Analyzer, register_analyzer
+from analyzers.base import Analyzer, register_analyzer
 
 
 @register_analyzer
