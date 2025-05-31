@@ -2,10 +2,12 @@ import pandas as pd
 import os
 
 class DataService():
-    def __init__(self, datasets="datasets.csv", data_source="tab3.csv"):
+    def __init__(self, datasets="datasets.csv", data_source="tab3.csv", dropdown_info="dropdown_info.csv"):
         self.datasets = os.path.join('data', datasets)
         self.data_source = os.path.join('data', data_source)
+        self.dropdown_info = os.path.join('data', dropdown_info)
         self.data = {}
+        self.field_dropdown_mapping = {}
 
     def fetch_data(self):
         """Load and process data from datasets.csv and tab3.csv"""

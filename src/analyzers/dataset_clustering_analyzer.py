@@ -44,7 +44,6 @@ class DatasetClusteringAnalyzer:
         
         output_file = os.path.join(output_dir, 'dataset_clustering_analysis.txt')
         plot_file_base = os.path.join(output_dir, 'dataset_clustering_plot')
-        plot_file = f"{plot_file_base}.png"
         
         # Convert data to a pandas DataFrame for easier manipulation
         df = DatasetClusteringAnalyzer._prepare_dataframe(data)
@@ -179,7 +178,7 @@ class DatasetClusteringAnalyzer:
         
         # Determine optimal number of clusters using silhouette score
         silhouette_scores = []
-        max_clusters = min(10, len(df) - 1)  # Don't try more clusters than we have data - 1
+        max_clusters = min(10, len(df) - 1)
         range_n_clusters = range(2, max_clusters + 1)
         
         for n_clusters in range_n_clusters:
