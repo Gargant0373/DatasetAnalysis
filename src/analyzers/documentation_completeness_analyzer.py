@@ -68,12 +68,22 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         standardized_answers = defaultdict(Counter)
         
         # Additional field mappings (non-dropdown fields)
+        # TODO synthesis type should be considered only where there is overlap synthesis ?
         additional_field_mappings = {
-            "Labeller Population Rationale": "Was there a rationale behind choosing labellers?",
-            "Label Source": "Did they provide the label source?",
-            "Total Labellers": "Did the provide the total number of labellers?",
-            "": ""
-                    
+            "Labeller Population Rationale": "Rationale behind choosing those labellers?",
+            "Label Source": "Provided the label source?",
+            "Labeller Population Rationale": "Reason provided for the labeller population?",
+            "Total Labellers": "Provided the total number of labellers?",
+            "Annotators per item": "Specified how many labellers annotated each item?",
+            "Label Threshold": "Provided the label threshold?",
+            # "Synthesis Type": "When overlap was done, did they mention how it was aggregated?",
+            "Item Population": "Population of the items described?",
+            "Item Population Rationale": "Reason given for choosing this item population?",
+            "Item source": "Item source given?",
+            "a Priori Sample Size": "Sample size chosen before data collection?",
+            "Item Sample Size Rationale": "Rationale given for the item size?",
+            "a Priori Annotation Schema": "Annotation schema created beforehand?",
+            "Annotation Schema Rationale": "Reason given for annotation schema?"
         }
         
         # Update field mapping with additional mappings
@@ -115,8 +125,22 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             
         # Handle non-dropdown fields with simpler binary logic
         # For these fields: "No information" or "Not applicable" -> "No", anything else -> "Yes"
+        # TODO Convert empty column
         non_dropdown_fields = [
             "Labeller Population Rationale",
+            "Label Source",
+            "Labeller Population Rationale",
+            "Total Labellers",
+            "Annotators per item",
+            "Label Threshold",
+            # "Synthesis Type",
+            "Item Population",
+            "Item Population Rationale",
+            "Item source",
+            "a Priori Sample Size",
+            "Item Sample Size Rationale",
+            "a Priori Annotation Schema",
+            "Annotation Schema Rationale"
         ]
         
         if field in non_dropdown_fields:
