@@ -1,0 +1,74 @@
+# Data files that may contain sensitive information
+/data/*.csv
+/data/*.xlsx
+/data/*.json
+/data/*.xml
+/data/*.db
+/data/*.sqlite
+/data/*.sqlite3
+
+# Outputs directory - may contain sensitive analysis results
+/outputs/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Local configuration files that might contain sensitive information
+*.ini
+*.conf
+config.py
+*_config.py
+*_settings.py
+secrets.py
+*_secrets.py
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
