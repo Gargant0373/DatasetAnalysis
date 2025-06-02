@@ -28,5 +28,11 @@
   "yes": "Yes",
   "yes, from external source": "Yes",
   "no": "No",
-  "Yes, but broken": "Partially"
+  "Yes, but broken": "Partially",
+  "Some training": "Yes",
+  "No instructions": "No",
+  "Formal instructions": "Yes",
+  "Some Instructions": "Partially",
+  "Yes, for all": "Yes",
+  "Yes, for some": "Partially"
 }

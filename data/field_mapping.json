@@ -4,6 +4,11 @@
   "OG Labels": "Were the used labels original?",
   "Prescreening": "Was prescreening or lack thereof stated?",
   "Compensation": "Was the compensation method stated?",
+  "Training": "Was information about training provided?",
+  "Formal Instructions": "Were formal instructions given?",
+  "Overlap": "Was there annotator overlap?",
+  "Discussion": "Was there a discussion among the annotators?",
+  "IRR": "Was IRR measured?",
   "Overlap synthesis": "Was the overlap synthesis method stated?",
   "A priori annotation schema": "Was the annotation schema predetermined?",
   "Link to dataset available": "Is there a link to the dataset available?"
