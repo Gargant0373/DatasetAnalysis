@@ -70,20 +70,20 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         # Additional field mappings (non-dropdown fields)
         # TODO synthesis type should be considered only where there is overlap synthesis ?
         additional_field_mappings = {
-            "Labeller Population Rationale": "Rationale behind choosing those labellers?",
-            "Label Source": "Provided the label source?",
-            "Labeller Population Rationale": "Reason provided for the labeller population?",
-            "Total Labellers": "Provided the total number of labellers?",
-            "Annotators per item": "Specified how many labellers annotated each item?",
-            "Label Threshold": "Provided the label threshold?",
-            # "Synthesis Type": "When overlap was done, did they mention how it was aggregated?",
-            "Item Population": "Population of the items described?",
-            "Item Population Rationale": "Reason given for choosing this item population?",
-            "Item source": "Item source given?",
-            "a Priori Sample Size": "Sample size chosen before data collection?",
-            "Item Sample Size Rationale": "Rationale given for the item size?",
-            "a Priori Annotation Schema": "Annotation schema created beforehand?",
-            "Annotation Schema Rationale": "Reason given for annotation schema?"
+            "Labeller Population Rationale": "Is there a rationale behind the chosen labellers?",
+            "Label Source": "Was the label source provided?",
+            "Labeller Population Rationale": "Was there a reason provided for the labeller population?",
+            "Total Labellers": "Was the total number of labellers provided?",
+            "Annotators per item": "Was the number of labellers per item specified?",
+            "Label Threshold": "Was the label threshold provided?",
+            "Synthesis Type": "Was the synthesis type described?",
+            "Item Population": "Was the population of the items described?",
+            "Item Population Rationale": "Was a reason given for choosing this item population?",
+            "Item source": "Was the item source given?",
+            "a Priori Sample Size": "Was the sample size chosen before data collection?",
+            "Item Sample Size Rationale": "Was a rationale given for the item size?",
+            "a Priori Annotation Schema": "Was the annotation schema created beforehand?",
+            "Annotation Schema Rationale": "Was a reason given for annotation schema?"
         }
         
         # Update field mapping with additional mappings
@@ -146,9 +146,14 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         if field in non_dropdown_fields:
             # Check for negative patterns
             negative_patterns = [
-                "no information", "not applicable", "n/a", "unknown", 
+                "no information", "unknown", 
                 "no details", "none", "not reported", "not specified"
             ]
+
+            na_patterns = [ "not applicable", 'n/a']
+
+            if any(pattern in value_str.lower() for pattern in na_patterns):
+                return "Not applicable"
             
             if any(pattern in value_str.lower() for pattern in negative_patterns):
                 return "No"
@@ -179,19 +184,20 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         
         # Create a more visually appealing color scheme
         colors = {
-            'Yes': '#2ca02c',          # Green
-            'Partially': '#1f77b4',    # Blue
-            'No': '#ff7f0e',           # Orange/Amber
-            'Not applicable': '#d3d3d3'  # Light Gray
+            'Yes': '#009E73',            # Teal-green (distinct from red/green confusion)
+            'Partially': '#0072B2',      # Blue (safe for most types of colorblindness)
+            'No': '#D55E00',             # Orange (distinct from teal and blue)
+            'Not applicable': '#999999'  # Medium gray (neutral, readable)
         }
+
         
         # Setup for hatching (stripes) - more distinctive patterns
-        hatches = {
-            'Yes': '///',
-            'Partially': '\\\\',
-            'No': 'xxx',
-            'Not applicable': '.'
-        }
+        # hatches = {
+        #     'Yes': '///',
+        #     'Partially': '\\\\',
+        #     'No': 'xxx',
+        #     'Not applicable': '.'
+        # }
         
         # Standard categories in display order
         categories = ['Yes', 'Partially', 'No', 'Not applicable']
@@ -227,7 +233,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         bars = []
         for category, counts in data_for_plotting:
             bar = plt.barh(y_pos, counts, left=left_positions, color=colors[category], 
-                   hatch=hatches[category], edgecolor='white', linewidth=0.5,
+                   edgecolor='white', linewidth=0.5,
                    label=category if category in colors else category, height=0.8)
             bars.append(bar)
             

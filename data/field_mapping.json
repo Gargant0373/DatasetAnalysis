@@ -1,10 +1,10 @@
 {
-  "Empty": "Is the dataset empty?",
-  "Human Labels": "Used labels for human judgement?",
-  "OG Labels": "Did they have original labels?",
+  "Available": "Any available information about the dataset?",
+  "Human Labels": "Did humans label the dataset?",
+  "OG Labels": "Were the used labels original?",
   "Prescreening": "Was prescreening or lack thereof stated?",
-  "Compensation": "Compensation method stated?",
-  "Overlap synthesis": "Was overlap synthesis used?",
-  "A priori annotation schema": "Was there an a priori annotation schema?",
+  "Compensation": "Was the compensation method stated?",
+  "Overlap synthesis": "Was the overlap synthesis method stated?",
+  "A priori annotation schema": "Was the annotation schema predetermined?",
   "Link to dataset available": "Is there a link to the dataset available?"
 }
