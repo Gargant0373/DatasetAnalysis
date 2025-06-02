@@ -90,26 +90,31 @@ class CitationMissingCorrelationAnalyzer:
         
         # Create scatter plot
         plt.figure(figsize=(12, 8))
-        plt.scatter(citation_counts, missing_percentages, alpha=0.7)
+        plt.scatter(citation_counts, missing_percentages, 
+                   alpha=0.7,
+                   s=60,  # slightly larger points for better visibility
+                   c='steelblue',  # consistent color
+                   edgecolors='white',  # white edge for better visibility
+                   linewidths=0.5)  # thin edge
         
         # Add trend line
         z = np.polyfit(citation_counts, missing_percentages, 1)
         p = np.poly1d(z)
-        plt.plot(sorted(citation_counts), p(sorted(citation_counts)), "r--", alpha=0.7)
+        plt.plot(sorted(citation_counts), p(sorted(citation_counts)), "r--", alpha=0.7, 
+                linewidth=2, label=f'Trend line (r={pearson_r:.2f})')
         
-        # Add labels for each point
-        for i, dataset in enumerate(datasets):
-            plt.annotate(dataset, 
-                         (citation_counts[i], missing_percentages[i]),
-                         textcoords="offset points",
-                         xytext=(0,5), 
-                         ha='center',
-                         fontsize=8)
-        
-        plt.xlabel('Citation Count')
-        plt.ylabel('Missing Information (%)')
-        plt.title('Correlation between Citation Count and Missing Information')
+        plt.xlabel('Citation Count', fontsize=12, fontweight='bold')
+        plt.ylabel('Missing Information (%)', fontsize=12, fontweight='bold')
+        plt.title('Correlation between Citation Count and Missing Information', 
+                 fontsize=14, fontweight='bold')
         plt.grid(True, alpha=0.3)
+        plt.legend()
+        
+        # Add annotation with correlation coefficient
+        plt.figtext(0.15, 0.85, 
+                   f"Pearson r: {pearson_r:.3f} (p={pearson_p:.3f})\nSpearman r: {spearman_r:.3f} (p={spearman_p:.3f})",
+                   bbox=dict(facecolor='white', alpha=0.8, boxstyle='round,pad=0.5'),
+                   fontsize=10)
         
         # Save plot
         plt.savefig(plot_file, dpi=300, bbox_inches='tight')

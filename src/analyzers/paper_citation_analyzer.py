@@ -165,6 +165,25 @@ class PaperCitationAnalyzer(Analyzer):
                     f.write(f"{i+1}. {name}: {count} citations\n")
                 
                 f.write("\n")
+                
+            # Identify statistical outliers using z-score method
+            citation_array = np.array(citation_counts)
+            z_scores = np.abs(stats.zscore(citation_array))
+            outlier_threshold = 3.0  # Common threshold for identifying outliers
+            outlier_indices = np.where(z_scores > outlier_threshold)[0]
+            
+            if len(outlier_indices) > 0:
+                f.write("Statistical Outliers (Z-score > 3.0):\n")
+                f.write("-" * 50 + "\n")
+                f.write("These datasets have citation counts that deviate significantly from the normal distribution:\n\n")
+                
+                for idx in outlier_indices:
+                    name = dataset_names[idx]
+                    count = citation_counts[idx]
+                    z_score = z_scores[idx]
+                    f.write(f"- {name}: {count} citations (Z-score: {z_score:.2f})\n")
+                
+                f.write("\n")
             
             # Add references to the generated visualizations
             f.write("\nVisualizations Generated:\n")
