@@ -175,7 +175,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         # If no mapping found and value is present, consider it as "Yes"
         return "Yes"
     
-    def _create_stacked_bar_chart(self, standardized_answers, field_mapping, output_dir):
+    def _create_stacked_bar_chart(self, standardized_answers, field_mapping, output_dir, sort=False):
         """Create a stacked bar chart showing documentation completeness."""
         # Set up the figure with appropriate size and style
         plt.figure(figsize=(16, 12))
@@ -201,8 +201,11 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         # Standard categories in display order
         categories = ['Yes', 'Partially', 'No', 'Not applicable']
         
-        # Get fields and sort them based on Yes count (descending)
-        fields = sorted(standardized_answers.keys(), 
+        fields = standardized_answers.keys()
+        
+        if sort:
+            # Get fields and sort them based on Yes count (descending)
+            fields = sorted(standardized_answers.keys(), 
                       key=lambda x: standardized_answers[x].get('Yes', 0), 
                       reverse=True)
         
