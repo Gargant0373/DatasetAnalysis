@@ -69,7 +69,6 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         # Additional field mappings (non-dropdown fields)
         # TODO synthesis type should be considered only where there is overlap synthesis ?
         additional_field_mappings = {
-            "Labeller Population Rationale": "Is there a rationale behind the chosen labellers?",
             "Label Source": "Was the label source provided?",
             "Labeller Population Rationale": "Was there a reason provided for the labeller population?",
             "Total Labellers": "Was the total number of labellers provided?",
