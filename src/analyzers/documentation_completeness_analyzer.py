@@ -201,7 +201,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         # Standard categories in display order
         categories = ['Yes', 'Partially', 'No', 'Not applicable']
         
-        fields = standardized_answers.keys()
+        fields = list(reversed(standardized_answers.keys()))
         
         if sort:
             # Get fields and sort them based on Yes count (descending)
