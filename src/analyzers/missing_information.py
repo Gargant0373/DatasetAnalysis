@@ -66,6 +66,10 @@ class MissingInformationAnalyzer(Analyzer):
             periods.add(period)
             datasets_by_period[period].append(dataset_name)
         
+        # Track overall missing information stats
+        total_fields_count = 0
+        total_missing_count = 0
+        
         # Second pass: analyze missing information
         for dataset_name, dataset_info in data.items():
             dataset_missing_count = 0
@@ -78,6 +82,7 @@ class MissingInformationAnalyzer(Analyzer):
             # Count total fields for this period (excluding 'period' field itself)
             dataset_field_count = len(dataset_info) - 1  # Subtract 1 for the period field
             total_fields_by_period[period] += dataset_field_count
+            total_fields_count += dataset_field_count
             
             for field, value in dataset_info.items():
                 # Skip counting period field itself in missing analysis
@@ -95,12 +100,17 @@ class MissingInformationAnalyzer(Analyzer):
                     dataset_missing_count += 1
                     field_missing_by_period[period][field] += 1
                     missing_by_period[period] += 1
+                    total_missing_count += 1
             
             dataset_missing_counts[dataset_name] = dataset_missing_count
         
         # Write results to output file
         with open(output_file, 'w') as f:
             f.write("=== Missing Information Analysis ===\n\n")
+            
+            # Overall missing information percentage
+            overall_percentage = (total_missing_count / total_fields_count) * 100 if total_fields_count > 0 else 0
+            f.write(f"Overall Missing Information: {total_missing_count}/{total_fields_count} fields ({overall_percentage:.2f}%)\n\n")
             
             # Summary of missing information by field
             f.write("Missing Information by Field:\n")
