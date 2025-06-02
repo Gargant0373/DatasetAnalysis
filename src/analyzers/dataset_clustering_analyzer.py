@@ -38,12 +38,12 @@ class DatasetClusteringAnalyzer:
         Returns:
             Path to the output file
         """
-        # Create output directory if it doesn't exist
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        analyzer_dir = os.path.join(output_dir, DatasetClusteringAnalyzer.get_name())
+        if not os.path.exists(analyzer_dir):
+            os.makedirs(analyzer_dir)
         
-        output_file = os.path.join(output_dir, 'dataset_clustering_analysis.txt')
-        plot_file_base = os.path.join(output_dir, 'dataset_clustering_plot')
+        output_file = os.path.join(analyzer_dir, 'dataset_clustering_analysis.txt')
+        plot_file_base = os.path.join(analyzer_dir, 'dataset_clustering_plot')
         
         # Convert data to a pandas DataFrame for easier manipulation
         df = DatasetClusteringAnalyzer._prepare_dataframe(data)

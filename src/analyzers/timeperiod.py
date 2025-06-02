@@ -33,11 +33,10 @@ class TimeperiodAnalyzer(Analyzer):
         Returns:
             Path to the output file
         """
-        # Create output directory if it doesn't exist
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        # Get analyzer-specific output directory
+        analyzer_dir = self.get_analyzer_output_dir(output_dir)
         
-        output_file = os.path.join(output_dir, 'timeperiod_analysis.txt')
+        output_file = os.path.join(analyzer_dir, 'timeperiod_analysis.txt')
         
         # Count datasets by time period
         time_periods = Counter()

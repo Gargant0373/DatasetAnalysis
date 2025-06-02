@@ -28,12 +28,13 @@ class CitationMissingCorrelationAnalyzer:
         Returns:
             Path to the output file
         """
-        # Create output directory if it doesn't exist
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        # Create analyzer-specific output directory
+        analyzer_dir = os.path.join(output_dir, CitationMissingCorrelationAnalyzer.get_name())
+        if not os.path.exists(analyzer_dir):
+            os.makedirs(analyzer_dir)
         
-        output_file = os.path.join(output_dir, 'citation_vs_missing_analysis.txt')
-        plot_file = os.path.join(output_dir, 'citation_vs_missing_plot.png')
+        output_file = os.path.join(analyzer_dir, 'citation_vs_missing_analysis.txt')
+        plot_file = os.path.join(analyzer_dir, 'citation_vs_missing_plot.png')
         
         # Standard fields that aren't considered missing info fields
         standard_fields = {'name', 'period', 'citation_sum', 'status', 

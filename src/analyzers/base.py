@@ -8,6 +8,29 @@ from typing import Dict, Any, List, Type
 class Analyzer(ABC):
     """Base class for all analyzers."""
     
+    def get_analyzer_output_dir(self, output_dir: str = 'outputs') -> str:
+        """
+        Get or create an analyzer-specific output directory.
+        
+        Args:
+            output_dir: Base output directory
+            
+        Returns:
+            Path to analyzer-specific output directory
+        """
+        # Create main output directory if it doesn't exist
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        
+        # Create analyzer-specific subdirectory based on analyzer name
+        analyzer_name = self.get_name().lower().replace(' ', '_')
+        analyzer_dir = os.path.join(output_dir, analyzer_name)
+        
+        if not os.path.exists(analyzer_dir):
+            os.makedirs(analyzer_dir)
+            
+        return analyzer_dir
+    
     @abstractmethod
     def analyze(self, data: Dict[str, Dict[str, Any]], output_dir: str = 'outputs') -> str:
         """

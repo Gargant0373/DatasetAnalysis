@@ -32,11 +32,10 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         Returns:
             Path to the output file
         """
-        # Create output directory if it doesn't exist
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+        # Get analyzer-specific output directory
+        analyzer_dir = self.get_analyzer_output_dir(output_dir)
         
-        output_file = os.path.join(output_dir, 'documentation_completeness_analysis.txt')
+        output_file = os.path.join(analyzer_dir, 'documentation_completeness_analysis.txt')
         
         # Load field mappings and answer mappings
         field_mapping = self._load_json('data/field_mapping.json')
@@ -279,7 +278,8 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         plt.tight_layout(pad=2.0)
         
         # Save the figure
-        plot_file = os.path.join(output_dir, 'documentation_completeness.png')
+        analyzer_dir = self.get_analyzer_output_dir(output_dir)
+        plot_file = os.path.join(analyzer_dir, 'documentation_completeness.png')
         plt.savefig(plot_file, dpi=300, bbox_inches='tight')
         plt.close()
         
