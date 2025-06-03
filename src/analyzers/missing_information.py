@@ -47,6 +47,7 @@ class MissingInformationAnalyzer(Analyzer):
         # Count occurrences of missing information for each field
         field_missing_counts = {}
         dataset_missing_counts = {}
+        dataset_field_counts = {}
         
         # Period-related analysis
         periods = set()
@@ -80,7 +81,17 @@ class MissingInformationAnalyzer(Analyzer):
                 period = 'Unknown'
             
             # Count total fields for this period (excluding 'period' field itself)
-            dataset_field_count = len(dataset_info) - 1  # Subtract 1 for the period field
+            dataset_field_count = 0
+            fields_to_skip = ['period', 'Done for?', 'Additional Links', 'DS Citation', 'DS DOI', 'name', 
+                              'citation_sum', 'status', 'Available']
+            for field, value in dataset_info.items():
+                if field in fields_to_skip:
+                    continue
+                # Skip "Not applicable" fields from total field count
+                if isinstance(value, str) and value.strip().lower() == 'not applicable':
+                    continue
+                dataset_field_count += 1
+
             total_fields_by_period[period] += dataset_field_count
             total_fields_count += dataset_field_count
             
@@ -92,7 +103,6 @@ class MissingInformationAnalyzer(Analyzer):
                 if field not in field_missing_counts:
                     field_missing_counts[field] = 0
                 
-                # Check if the value contains any missing information pattern
                 is_missing = value is None or (isinstance(value, str) and any(pattern.lower() in str(value).lower() for pattern in missing_patterns))
                 
                 if is_missing:
@@ -103,6 +113,7 @@ class MissingInformationAnalyzer(Analyzer):
                     total_missing_count += 1
             
             dataset_missing_counts[dataset_name] = dataset_missing_count
+            dataset_field_counts[dataset_name] = dataset_field_count
         
         # Write results to output file
         with open(output_file, 'w') as f:
@@ -125,7 +136,7 @@ class MissingInformationAnalyzer(Analyzer):
             f.write("Missing Information by Dataset:\n")
             f.write("-" * 50 + "\n")
             for dataset, count in sorted(dataset_missing_counts.items(), key=lambda x: x[1], reverse=True):
-                total_fields = len(data[dataset]) - 1  # Subtract 1 for period field
+                total_fields = dataset_field_counts[dataset]  # Subtract 1 for period field
                 percentage = (count / total_fields) * 100 if total_fields > 0 else 0
                 f.write(f"{dataset}: {count}/{total_fields} fields ({percentage:.2f}%)\n")
             
