@@ -42,7 +42,7 @@ class MissingInformationAnalyzer(Analyzer):
         output_file = os.path.join(analyzer_dir, 'missing_information_analysis.txt')
         
         # Define patterns for missing information
-        missing_patterns = ["N/A", "No information", "Not applicable", "Unknown", "Unsure", "nan"]
+        missing_patterns = ["No information", "Unknown", "Unsure", "nan"]
         
         # Count occurrences of missing information for each field
         field_missing_counts = {}

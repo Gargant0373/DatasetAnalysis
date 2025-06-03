@@ -36,7 +36,7 @@ class DataService():
         data_source_df['DS_Descriptor_normalized'] = data_source_df['DS Descriptor'].str.lower().str.strip()
         
         for _, dataset_row in datasets_df.iterrows():
-            dataset_name = dataset_row['Dataset']
+            dataset_name = f"{dataset_row['Dataset']},{dataset_row['Period']}"
             dataset_name_normalized = dataset_row['Dataset_normalized']
             
             # Add basic dataset information
