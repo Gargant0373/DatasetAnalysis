@@ -42,13 +42,18 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         answer_mapping = self._load_json('data/answer_mapping.json')
         
         # Process the dataset to get standardized answers
-        field_answers, standardized_answers = self._process_fields_and_answers(data, field_mapping, answer_mapping)
-        
+        field_answers_15, standardized_answers_15 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 15)
+        field_answers_5, standardized_answers_5 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 5)
+        field_answers_2, standardized_answers_2 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 2)
+
         # Create the visualization
-        plot_file = self._create_stacked_bar_chart(standardized_answers, field_mapping, output_dir)
-        
+        plot_file = self._create_stacked_bar_chart(standardized_answers_15, field_mapping, output_dir, period=15)
+        self._create_stacked_bar_chart(standardized_answers_5, field_mapping, output_dir, period=5)
+        self._create_stacked_bar_chart(standardized_answers_2, field_mapping, output_dir, period=2)
+
         # Write analysis results
-        self._write_analysis(output_file, field_answers, standardized_answers, field_mapping)
+        # TODO: Make _write_analysis for all periods
+        self._write_analysis(output_file, field_answers_15, standardized_answers_15, field_mapping)
         
         return output_file
     
@@ -61,7 +66,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             print(f"Error loading {file_path}: {e}")
             return {}
     
-    def _process_fields_and_answers(self, data, field_mapping, answer_mapping):
+    def _process_fields_and_answers(self, data, field_mapping, answer_mapping, period=0):
         """Process dataset fields and standardize answers."""
         field_answers = defaultdict(list)
         standardized_answers = defaultdict(Counter)
@@ -88,17 +93,18 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         for field, question in additional_field_mappings.items():
             if field not in field_mapping:
                 field_mapping[field] = question
-                
+
         # Process each field in each dataset
         for dataset_name, dataset_info in data.items():
-            for field, value in dataset_info.items():
-                # Only process fields that have mappings
-                if field in field_mapping:
-                    field_answers[field].append(value)
-                    
-                    # Standardize the answer
-                    standardized = self._standardize_answer(value, answer_mapping, field)
-                    standardized_answers[field][standardized] += 1
+            if dataset_info.get('period') == period or period == 0:
+                for field, value in dataset_info.items():
+                    # Only process fields that have mappings
+                    if field in field_mapping:
+                        field_answers[field].append(value)
+
+                        # Standardize the answer
+                        standardized = self._standardize_answer(value, answer_mapping, field)
+                        standardized_answers[field][standardized] += 1
         
         return field_answers, standardized_answers
     
@@ -174,7 +180,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         # If no mapping found and value is present, consider it as "Yes"
         return "Yes"
     
-    def _create_stacked_bar_chart(self, standardized_answers, field_mapping, output_dir, sort=False):
+    def _create_stacked_bar_chart(self, standardized_answers, field_mapping, output_dir, sort=False, period=0):
         """Create a stacked bar chart showing documentation completeness."""
         # Set up the figure with appropriate size and style
         plt.figure(figsize=(16, 12))
@@ -254,7 +260,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         # Enhance the labels and title with better typography
         plt.yticks(y_pos, questions, fontsize=11, fontweight='bold')
         plt.xlabel('Count', fontsize=12, fontweight='bold')
-        plt.title('Summary Results for Dataset Documentation', 
+        plt.title(f'Summary Results for Dataset Documentation in {period} Year Period',
                  fontsize=16, fontweight='bold', pad=20)
         
         # Add subtitle
@@ -281,7 +287,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         
         # Save the figure
         analyzer_dir = self.get_analyzer_output_dir(output_dir)
-        plot_file = os.path.join(analyzer_dir, 'documentation_completeness.png')
+        plot_file = os.path.join(analyzer_dir, f'documentation_completeness_{period}.png')
         plt.savefig(plot_file, dpi=300, bbox_inches='tight')
         plt.close()
         
