@@ -10,7 +10,7 @@
   "Implicit Yes": "Yes",
   "OG": "Yes",
   "External": "Yes",
-  "Not Labelled": "No",
+  "Not Labelled": "Not applicable",
   "Generic skill based": "Yes",
   "Previous platform performance": "Yes",
   "Project-specific prescreening": "Yes",
@@ -34,5 +34,6 @@
   "Formal instructions": "Yes",
   "Some Instructions": "Partially",
   "Yes, for all": "Yes",
-  "Yes, for some": "Partially"
+  "Yes, for some": "Partially",
+  "Mix OG, External": "Partially"
 }
