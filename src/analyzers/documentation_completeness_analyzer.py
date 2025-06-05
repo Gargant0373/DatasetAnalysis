@@ -145,7 +145,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             # Check for negative patterns
             negative_patterns = [
                 "no information", "unknown", 
-                "no details", "none", "not reported", "not specified"
+                "no details", "none", "not reported", "not specified", "unsure"
             ]
 
             na_patterns = [ "not applicable", 'n/a']
