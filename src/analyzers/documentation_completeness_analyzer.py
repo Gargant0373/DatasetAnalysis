@@ -271,11 +271,16 @@ class DocumentationCompletenessAnalyzer(Analyzer):
                             fontweight='bold')
                     
             left_positions = left_positions + counts
+
+        if period == 0:
+            title_text = "Overall"
+        else:
+            title_text = f"{period} Year Period"
         
         # Enhance the labels and title with better typography
         plt.yticks(y_pos, questions, fontsize=11, fontweight='bold')
         plt.xlabel('Count', fontsize=12, fontweight='bold')
-        plt.title(f'Summary Results for Dataset Documentation in {period} Year Period',
+        plt.title(f'Summary Results for Dataset Documentation, {title_text}',
                  fontsize=16, fontweight='bold', pad=20)
         
         # Add subtitle
