@@ -45,15 +45,17 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         field_answers_15, standardized_answers_15 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 15)
         field_answers_5, standardized_answers_5 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 5)
         field_answers_2, standardized_answers_2 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 2)
+        field_answers_overall, standardized_answers_overall = self._process_fields_and_answers(data, field_mapping, answer_mapping, 0)
 
         # Create the visualization
         plot_file = self._create_stacked_bar_chart(standardized_answers_15, field_mapping, output_dir, period=15)
         self._create_stacked_bar_chart(standardized_answers_5, field_mapping, output_dir, period=5)
         self._create_stacked_bar_chart(standardized_answers_2, field_mapping, output_dir, period=2)
+        self._create_stacked_bar_chart(standardized_answers_overall, field_mapping, output_dir, period=0)
 
         # Write analysis results
         # TODO: Make _write_analysis for all periods
-        self._write_analysis(output_file, field_answers_15, standardized_answers_15, field_mapping)
+        self._write_analysis(output_file, field_answers_overall, standardized_answers_overall, field_mapping)
         
         return output_file
     
@@ -93,6 +95,19 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         for field, question in additional_field_mappings.items():
             if field not in field_mapping:
                 field_mapping[field] = question
+
+        # Deduplicate if the overall period is used
+        if period == 0:
+            filtered_data = {}
+            seen = set()
+
+            for full_name, info in data.items():
+                base_name = full_name.split(',')[0]
+                if base_name not in seen:
+                    filtered_data[full_name] = info
+                    seen.add(base_name)
+
+            data = filtered_data
 
         # Process each field in each dataset
         for dataset_name, dataset_info in data.items():
