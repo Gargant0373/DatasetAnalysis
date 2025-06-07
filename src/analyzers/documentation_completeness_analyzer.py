@@ -86,7 +86,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             "Item Population Rationale": "Was a reason given for choosing this item population?",
             "Item source": "Was the item source given?",
             "a Priori Sample Size": "Was the sample size chosen before data collection?",
-            "Item Sample Size Rationale": "Was a rationale given for the item size?",
+            "Item Sample Size Rationale": "Was a rationale given for the sample size?",
             "a Priori Annotation Schema": "Was the annotation schema created beforehand?",
             "Annotation Schema Rationale": "Was a reason given for annotation schema?"
         }
