@@ -45,17 +45,21 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         field_answers_15, standardized_answers_15 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 15)
         field_answers_5, standardized_answers_5 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 5)
         field_answers_2, standardized_answers_2 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 2)
-        field_answers_overall, standardized_answers_overall = self._process_fields_and_answers(data, field_mapping, answer_mapping, 0)
-
-        # Create the visualization
+        field_answers_overall, standardized_answers_overall = self._process_fields_and_answers(data, field_mapping, answer_mapping, 0)        # Create the visualization
         plot_file = self._create_stacked_bar_chart(standardized_answers_15, field_mapping, output_dir, period=15)
         self._create_stacked_bar_chart(standardized_answers_5, field_mapping, output_dir, period=5)
         self._create_stacked_bar_chart(standardized_answers_2, field_mapping, output_dir, period=2)
         self._create_stacked_bar_chart(standardized_answers_overall, field_mapping, output_dir, period=0)
 
-        # Write analysis results
-        # TODO: Make _write_analysis for all periods
-        self._write_analysis(output_file, field_answers_overall, standardized_answers_overall, field_mapping)
+        # Write comprehensive analysis results for all periods
+        self._write_analysis(output_file, 
+                            {
+                                15: (field_answers_15, standardized_answers_15),
+                                5: (field_answers_5, standardized_answers_5),
+                                2: (field_answers_2, standardized_answers_2),
+                                0: (field_answers_overall, standardized_answers_overall)
+                            }, 
+                            field_mapping)
         
         return output_file
     
@@ -312,42 +316,278 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         plt.close()
         
         return plot_file
-    
-    def _write_analysis(self, output_file, field_answers, standardized_answers, field_mapping):
-        """Write analysis results to file."""
+    def _write_analysis(self, output_file, period_data, field_mapping):
+        """
+        Write comprehensive analysis results to file for all time periods.
+        
+        Args:
+            output_file: Path to output analysis file
+            period_data: Dictionary mapping periods to (field_answers, standardized_answers) tuples
+            field_mapping: Dictionary mapping field names to display names
+        """
         with open(output_file, 'w') as f:
-            f.write("=== Documentation Completeness Analysis ===\n\n")
+            f.write("=== DOCUMENTATION COMPLETENESS ANALYSIS ===\n\n")
+            f.write("This analysis examines the completeness of dataset documentation across different time periods.\n")
+            f.write("The analysis is broken down by 15-year, 5-year, and 2-year periods, as well as overall statistics.\n\n")
             
-            # Summary by field
-            f.write("Documentation Completeness by Field:\n")
-            f.write("-" * 50 + "\n")
+            # Write executive summary
+            f.write("EXECUTIVE SUMMARY\n")
+            f.write("=" * 80 + "\n\n")
             
-            for field, answers in standardized_answers.items():
-                question = field_mapping.get(field, field)
-                total = sum(answers.values())
+            # Calculate overall completeness percentages for each period
+            period_names = {15: "15-Year Period", 5: "5-Year Period", 2: "2-Year Period", 0: "Overall"}
+            period_completeness = {}
+            
+            for period, (field_answers, standardized_answers) in period_data.items():
+                total_fields = sum(len(answers) for answers in field_answers.values())
+                all_categories = Counter()
                 
-                f.write(f"{question}:\n")
-                for category, count in sorted(answers.items(), key=lambda x: x[1], reverse=True):
-                    percentage = (count / total) * 100 if total > 0 else 0
-                    f.write(f"  - {category}: {count} ({percentage:.2f}%)\n")
+                for field, categories in standardized_answers.items():
+                    for category, count in categories.items():
+                        all_categories[category] += count
+                
+                yes_count = all_categories.get('Yes', 0)
+                partial_count = all_categories.get('Partially', 0)
+                yes_percentage = (yes_count / total_fields) * 100 if total_fields > 0 else 0
+                partial_percentage = (partial_count / total_fields) * 100 if total_fields > 0 else 0
+                combined_percentage = yes_percentage + partial_percentage
+                
+                period_completeness[period] = {
+                    'total_fields': total_fields,
+                    'yes_percentage': yes_percentage,
+                    'partial_percentage': partial_percentage,
+                    'combined_percentage': combined_percentage,
+                    'categories': all_categories
+                }
+                
+                # Count datasets
+                dataset_count = 0
+                if period == 15:
+                    for field, answers in field_answers.items():
+                        dataset_count = len(answers)
+                        break
+                
+                # Write summary for this period
+                f.write(f"{period_names[period]}:\n")
+                if period != 0:
+                    f.write(f"- Datasets analyzed: {dataset_count}\n")
+                f.write(f"- Documentation completeness: {combined_percentage:.2f}%\n")
+                f.write(f"  • Complete information: {yes_percentage:.2f}%\n")
+                f.write(f"  • Partial information: {partial_percentage:.2f}%\n")
+                f.write(f"- Most documented fields: {self._get_top_fields(standardized_answers, 3)}\n")
+                f.write(f"- Least documented fields: {self._get_bottom_fields(standardized_answers, 3)}\n\n")
+            
+            # Trend analysis
+            if all(period in period_completeness for period in [15, 5, 2]):
+                f.write("Documentation Trends Over Time:\n")
+                trend_15_to_5 = period_completeness[5]['combined_percentage'] - period_completeness[15]['combined_percentage']
+                trend_5_to_2 = period_completeness[2]['combined_percentage'] - period_completeness[5]['combined_percentage']
+                
+                f.write(f"- From 15-year to 5-year period: {'+' if trend_15_to_5 > 0 else ''}{trend_15_to_5:.2f}% change\n")
+                f.write(f"- From 5-year to 2-year period: {'+' if trend_5_to_2 > 0 else ''}{trend_5_to_2:.2f}% change\n")
+                
+                if trend_15_to_5 > 0 and trend_5_to_2 > 0:
+                    f.write("- Overall trend: Documentation completeness is consistently improving over time\n\n")
+                elif trend_15_to_5 < 0 and trend_5_to_2 < 0:
+                    f.write("- Overall trend: Documentation completeness is declining over time\n\n")
+                else:
+                    f.write("- Overall trend: Documentation completeness shows mixed trends over time\n\n")
+            
+            # Add visualizations reference
+            f.write("Visualizations:\n")
+            f.write("- documentation_completeness_15.png: Stacked bar chart for 15-year period\n")
+            f.write("- documentation_completeness_5.png: Stacked bar chart for 5-year period\n")
+            f.write("- documentation_completeness_2.png: Stacked bar chart for 2-year period\n")
+            f.write("- documentation_completeness_0.png: Stacked bar chart for overall analysis\n\n")
+            
+            # Detailed Analysis by Period
+            for period, (field_answers, standardized_answers) in period_data.items():
+                f.write("\n" + "=" * 80 + "\n")
+                f.write(f"DETAILED ANALYSIS: {period_names[period].upper()}\n")
+                f.write("=" * 80 + "\n\n")
+                
+                # Calculate dataset count for this period
+                dataset_count = 0
+                for field, answers in field_answers.items():
+                    if len(answers) > dataset_count:
+                        dataset_count = len(answers)
+                
+                if period != 0:
+                    f.write(f"Number of datasets analyzed: {dataset_count}\n\n")
+                
+                # Top and bottom documented fields
+                f.write("Top 5 Most Documented Fields:\n")
+                f.write("-" * 50 + "\n")
+                top_fields = self._get_top_fields_with_percentages(standardized_answers, 5)
+                for field, percentage in top_fields:
+                    question = field_mapping.get(field, field)
+                    f.write(f"- {question}: {percentage:.2f}% complete or partial documentation\n")
                 f.write("\n")
+                
+                f.write("Bottom 5 Least Documented Fields:\n")
+                f.write("-" * 50 + "\n")
+                bottom_fields = self._get_bottom_fields_with_percentages(standardized_answers, 5)
+                for field, percentage in bottom_fields:
+                    question = field_mapping.get(field, field)
+                    f.write(f"- {question}: {percentage:.2f}% complete or partial documentation\n")
+                f.write("\n")
+                
+                # Field breakdown
+                f.write("Documentation Completeness by Field:\n")
+                f.write("-" * 50 + "\n")
+                
+                sorted_fields = sorted(
+                    standardized_answers.keys(),
+                    key=lambda x: (standardized_answers[x].get('Yes', 0) + standardized_answers[x].get('Partially', 0)) / 
+                                 sum(standardized_answers[x].values()) if sum(standardized_answers[x].values()) > 0 else 0,
+                    reverse=True
+                )
+                
+                for field in sorted_fields:
+                    question = field_mapping.get(field, field)
+                    answers = standardized_answers[field]
+                    total = sum(answers.values())
+                    
+                    f.write(f"{question}:\n")
+                    
+                    # Calculate percentages
+                    yes_count = answers.get('Yes', 0)
+                    partial_count = answers.get('Partially', 0)
+                    no_count = answers.get('No', 0)
+                    na_count = answers.get('Not applicable', 0)
+                    
+                    yes_pct = (yes_count / total) * 100 if total > 0 else 0
+                    partial_pct = (partial_count / total) * 100 if total > 0 else 0
+                    no_pct = (no_count / total) * 100 if total > 0 else 0
+                    na_pct = (na_count / total) * 100 if total > 0 else 0
+                    
+                    f.write(f"  - Complete: {yes_count} ({yes_pct:.2f}%)\n")
+                    f.write(f"  - Partial: {partial_count} ({partial_pct:.2f}%)\n")
+                    f.write(f"  - Missing: {no_count} ({no_pct:.2f}%)\n")
+                    f.write(f"  - Not applicable: {na_count} ({na_pct:.2f}%)\n")
+                    f.write("\n")
+                
+                # Overall statistics for this period
+                f.write("Overall Documentation Statistics:\n")
+                f.write("-" * 50 + "\n")
+                
+                total_fields = sum(len(answers) for answers in field_answers.values())
+                f.write(f"Total fields analyzed: {len(field_answers)}\n")
+                f.write(f"Total data points: {total_fields}\n")
+                
+                # Count overall categories
+                all_categories = Counter()
+                for field, categories in standardized_answers.items():
+                    for category, count in categories.items():
+                        all_categories[category] += count
+                
+                # Display in a specific order
+                categories_order = ['Yes', 'Partially', 'No', 'Not applicable']
+                for category in categories_order:
+                    if category in all_categories:
+                        count = all_categories[category]
+                        percentage = (count / total_fields) * 100 if total_fields > 0 else 0
+                        f.write(f"- {category}: {count} ({percentage:.2f}%)\n")
             
-            # Overall statistics
-            f.write("Overall Documentation Statistics:\n")
-            f.write("-" * 50 + "\n")
+            # Add recommendations section
+            f.write("\n" + "=" * 80 + "\n")
+            f.write("RECOMMENDATIONS FOR IMPROVING DATASET DOCUMENTATION\n")
+            f.write("=" * 80 + "\n\n")
             
-            total_fields = sum(len(answers) for answers in field_answers.values())
-            f.write(f"Total fields analyzed: {len(field_answers)}\n")
-            f.write(f"Total data points: {total_fields}\n")
+            # Get consistently problematic fields across all periods
+            problematic_fields = self._get_consistently_problematic_fields(period_data)
             
-            # Count overall categories
-            all_categories = Counter()
-            for field, categories in standardized_answers.items():
-                for category, count in categories.items():
-                    all_categories[category] += count
+            f.write("Based on the analysis, the following documentation aspects need the most improvement:\n\n")
             
-            for category, count in sorted(all_categories.items(), key=lambda x: x[1], reverse=True):
-                percentage = (count / total_fields) * 100 if total_fields > 0 else 0
-                f.write(f"- {category}: {count} ({percentage:.2f}%)\n")
+            for field, avg_percentage in problematic_fields[:5]:
+                question = field_mapping.get(field, field)
+                f.write(f"1. {question} - Only {avg_percentage:.2f}% of datasets provide this information\n")
+                f.write(f"   Recommendation: Make this field a required part of dataset documentation standards\n\n")
             
+            f.write("General recommendations:\n")
+            f.write("1. Develop and promote standardized documentation templates that include all critical fields\n")
+            f.write("2. Create documentation checklists for dataset publishers\n")
+            f.write("3. Incentivize complete documentation through recognition or citation benefits\n")
+            f.write("4. Conduct regular audits of dataset documentation completeness in repositories\n")
+        
         return output_file
+    
+    def _get_top_fields(self, standardized_answers, n=3):
+        """Get the top n most documented fields."""
+        field_completeness = {}
+        
+        for field, answers in standardized_answers.items():
+            total = sum(answers.values())
+            yes_count = answers.get('Yes', 0)
+            partial_count = answers.get('Partially', 0)
+            completeness = (yes_count + partial_count) / total if total > 0 else 0
+            field_completeness[field] = completeness
+        
+        top_fields = sorted(field_completeness.items(), key=lambda x: x[1], reverse=True)[:n]
+        return ", ".join(field for field, _ in top_fields)
+    
+    def _get_bottom_fields(self, standardized_answers, n=3):
+        """Get the bottom n least documented fields."""
+        field_completeness = {}
+        
+        for field, answers in standardized_answers.items():
+            total = sum(answers.values())
+            yes_count = answers.get('Yes', 0)
+            partial_count = answers.get('Partially', 0)
+            completeness = (yes_count + partial_count) / total if total > 0 else 0
+            field_completeness[field] = completeness
+        
+        bottom_fields = sorted(field_completeness.items(), key=lambda x: x[1])[:n]
+        return ", ".join(field for field, _ in bottom_fields)
+    
+    def _get_top_fields_with_percentages(self, standardized_answers, n=5):
+        """Get the top n most documented fields with their percentages."""
+        field_completeness = {}
+        
+        for field, answers in standardized_answers.items():
+            total = sum(answers.values())
+            yes_count = answers.get('Yes', 0)
+            partial_count = answers.get('Partially', 0)
+            completeness = ((yes_count + partial_count) / total) * 100 if total > 0 else 0
+            field_completeness[field] = completeness
+        
+        top_fields = sorted(field_completeness.items(), key=lambda x: x[1], reverse=True)[:n]
+        return top_fields
+    
+    def _get_bottom_fields_with_percentages(self, standardized_answers, n=5):
+        """Get the bottom n least documented fields with their percentages."""
+        field_completeness = {}
+        
+        for field, answers in standardized_answers.items():
+            total = sum(answers.values())
+            yes_count = answers.get('Yes', 0)
+            partial_count = answers.get('Partially', 0)
+            completeness = ((yes_count + partial_count) / total) * 100 if total > 0 else 0
+            field_completeness[field] = completeness
+        
+        bottom_fields = sorted(field_completeness.items(), key=lambda x: x[1])[:n]
+        return bottom_fields
+    
+    def _get_consistently_problematic_fields(self, period_data):
+        """Identify fields that are consistently problematic across all time periods."""
+        # Calculate average completeness for each field across all periods
+        field_avg_completeness = defaultdict(list)
+        
+        for period, (_, standardized_answers) in period_data.items():
+            for field, answers in standardized_answers.items():
+                total = sum(answers.values())
+                yes_count = answers.get('Yes', 0)
+                partial_count = answers.get('Partially', 0)
+                completeness = ((yes_count + partial_count) / total) * 100 if total > 0 else 0
+                field_avg_completeness[field].append(completeness)
+        
+        # Calculate average completeness across periods
+        field_avg = {}
+        for field, percentages in field_avg_completeness.items():
+            if len(percentages) == len(period_data):  # Only include fields present in all periods
+                field_avg[field] = sum(percentages) / len(percentages)
+        
+        # Sort by average completeness (ascending)
+        problematic_fields = sorted(field_avg.items(), key=lambda x: x[1])
+        
+        return problematic_fields
