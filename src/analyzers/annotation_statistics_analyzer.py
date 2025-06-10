@@ -73,8 +73,8 @@ class AnnotationStatisticsAnalyzer(Analyzer):
             "volunteer": ["volunteer"],
             "other": [""]
         }
-        counts, total = count_matches("Labeller Population Rationale", mapping)
-        results.append(("Labeller Population Rationale", counts, total))
+        counts, total = count_matches("Compensation", mapping)
+        results.append(("Compensation", counts, total))
 
         # Labeller Population Rationale
         mapping = {
