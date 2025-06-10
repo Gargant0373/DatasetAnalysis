@@ -14,4 +14,4 @@ Loading in data:
 1. Create a `data/dataset_frequency_by_period.csv` file and paste the columns A-C of the `X statistics` in the file.
 2. Create a `data/dataset_frequency_overall.csv` file and paste the columns E-F of the `X statistics` in the file.
 
-### Vibe coded, do NOT judge my SE skills on this.
+### LLM's were used to generate this code base.
