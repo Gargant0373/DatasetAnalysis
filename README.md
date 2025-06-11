@@ -14,4 +14,8 @@ Loading in data:
 1. Create a `data/dataset_frequency_by_period.csv` file and paste the columns A-C of the `X statistics` in the file.
 2. Create a `data/dataset_frequency_overall.csv` file and paste the columns E-F of the `X statistics` in the file.
 
+(optional) venue paper citation analysis:
+1. Download `Tab 1` and place it in the data folder. Rename it to `tab1.csv` and leave only the papers from your venue.
+2. In the script `citation_pattern.py` change the venue field with the name of your venue.
+
 ### LLM's were used to generate this code base.
