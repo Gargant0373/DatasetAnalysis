@@ -169,7 +169,20 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             "a Priori Annotation Schema",
             "Annotation Schema Rationale"
         ]
-        
+
+        no_information_fields = [
+            "Human Labels",
+            "OG Labels",
+            "Overlap",
+            "Formal Instructions",
+            "Discussion",
+            "a Priori Sample Size",
+            "a Priori Annotation Schema"
+        ]
+
+        if field in no_information_fields and value == "No information":
+            return "No information"
+
         if field in non_dropdown_fields:
             # Check for negative patterns
             negative_patterns = [
@@ -213,6 +226,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         colors = {
             'Yes': '#009E73',            # Teal-green (distinct from red/green confusion)
             'Partially': '#0072B2',      # Blue (safe for most types of colorblindness)
+            'No information': '#444444',
             'No': '#D55E00',             # Orange (distinct from teal and blue)
             'Not applicable': '#999999'  # Medium gray (neutral, readable)
         }
@@ -227,7 +241,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         # }
         
         # Standard categories in display order
-        categories = ['Yes', 'Partially', 'No', 'Not applicable']
+        categories = ['Yes', 'Partially', 'No information', 'No', 'Not applicable']
         
         fields = list(reversed(standardized_answers.keys()))
         
@@ -275,7 +289,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
                     text_x = left_positions[i] + count/2
                     plt.text(text_x, y_pos[i], f'{percentage:.0f}%', 
                             ha='center', va='center', fontsize=9, 
-                            color='white' if category in ['No', 'No information / Unsure'] else 'black',
+                            color='white' if category in ['No', 'No information'] else 'black',
                             fontweight='bold')
                     
             left_positions = left_positions + counts
@@ -457,7 +471,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
                     # Calculate percentages
                     yes_count = answers.get('Yes', 0)
                     partial_count = answers.get('Partially', 0)
-                    no_count = answers.get('No', 0)
+                    no_count = answers.get('No', 0) + answers.get('No information', 0)
                     na_count = answers.get('Not applicable', 0)
                     
                     yes_pct = (yes_count / total) * 100 if total > 0 else 0
@@ -486,7 +500,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
                         all_categories[category] += count
                 
                 # Display in a specific order
-                categories_order = ['Yes', 'Partially', 'No', 'Not applicable']
+                categories_order = ['Yes', 'Partially', 'No information', 'No', 'Not applicable']
                 for category in categories_order:
                     if category in all_categories:
                         count = all_categories[category]
@@ -605,13 +619,15 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             writer.writerow([
                 "Question",
                 "Yes",
+                "Partially",
+                "No information",
                 "No",
                 "Partially",
                 "Not applicable"
             ])
 
             # Standard categories to ensure consistent column ordering
-            categories = ["Yes", "No", "Partially", "Not applicable"]
+            categories = ["Yes", "Partially", "No information", "No", "Not applicable"]
 
             for field, answers in standardized_answers.items():
                 question = field_mapping.get(field, field)
