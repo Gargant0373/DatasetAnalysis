@@ -6,6 +6,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import csv
 from collections import Counter, defaultdict
 from analyzers.base import register_analyzer, Analyzer
 
@@ -34,8 +35,9 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         """
         # Get analyzer-specific output directory
         analyzer_dir = self.get_analyzer_output_dir(output_dir)
-        
-        output_file = os.path.join(analyzer_dir, 'documentation_completeness_analysis.txt')
+
+        output_file_txt = os.path.join(analyzer_dir, 'documentation_completeness_analysis.txt')
+        output_file_csv = os.path.join(analyzer_dir, 'documentation_completeness_analysis.csv')
         
         # Load field mappings and answer mappings
         field_mapping = self._load_json('data/field_mapping.json')
@@ -52,7 +54,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         self._create_stacked_bar_chart(standardized_answers_overall, field_mapping, output_dir, period=0)
 
         # Write comprehensive analysis results for all periods
-        self._write_analysis(output_file, 
+        self._write_analysis(output_file_txt,
                             {
                                 15: (field_answers_15, standardized_answers_15),
                                 5: (field_answers_5, standardized_answers_5),
@@ -60,8 +62,10 @@ class DocumentationCompletenessAnalyzer(Analyzer):
                                 0: (field_answers_overall, standardized_answers_overall)
                             }, 
                             field_mapping)
-        
-        return output_file
+        # Write analysis results into a csv format
+        self._write_analysis_csv(output_file_csv, standardized_answers_overall, field_mapping)
+
+        return output_file_txt
     
     def _load_json(self, file_path):
         """Load and parse a JSON file."""
@@ -591,3 +595,30 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         problematic_fields = sorted(field_avg.items(), key=lambda x: x[1])
         
         return problematic_fields
+
+    def _write_analysis_csv(self, output_file, standardized_answers, field_mapping):
+        """Write analysis results to CSV file."""
+        with open(output_file, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+
+            # Write the CSV header
+            writer.writerow([
+                "Question",
+                "Yes",
+                "No",
+                "Partially",
+                "Not applicable"
+            ])
+
+            # Standard categories to ensure consistent column ordering
+            categories = ["Yes", "No", "Partially", "Not applicable"]
+
+            for field, answers in standardized_answers.items():
+                question = field_mapping.get(field, field)
+                row = [question]
+                # Add counts for each category, defaulting to 0 if missing
+                for cat in categories:
+                    row.append(answers.get(cat, 0))
+                writer.writerow(row)
+
+        return output_file
