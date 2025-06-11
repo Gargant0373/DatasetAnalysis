@@ -67,6 +67,28 @@ class TopDatasetFrequencyAnalyzer(Analyzer):
 
         overlap_report += "\n"
 
+        # Add analysis of overlap across all three periods
+        all_three_overlap = top20_by_period[2] & top20_by_period[5] & top20_by_period[15]
+        overlap_report += (
+            f"=== Overlap Across All Three Periods (2, 5, 15) ===\n"
+            f"Datasets in top-20 of all three periods: {len(all_three_overlap)}\n"
+            f"Common datasets: {sorted(list(all_three_overlap))}\n\n"
+        )
+        
+        # Get all datasets for each period for comprehensive analysis
+        all_datasets_by_period = {}
+        for period in periods_to_compare:
+            period_subset = df[df['Period'] == period]
+            all_datasets_by_period[period] = set(period_subset['Dataset'].tolist())
+        
+        all_three_overall = all_datasets_by_period[2] & all_datasets_by_period[5] & all_datasets_by_period[15]
+        overlap_report += (
+            f"Datasets appearing in all three periods (any rank): {len(all_three_overall)}\n"
+            f"Percentage of Period 2 datasets: {len(all_three_overall)/len(all_datasets_by_period[2])*100:.1f}%\n"
+            f"Percentage of Period 5 datasets: {len(all_three_overall)/len(all_datasets_by_period[5])*100:.1f}%\n"
+            f"Percentage of Period 15 datasets: {len(all_three_overall)/len(all_datasets_by_period[15])*100:.1f}%\n\n"
+        )
+
         table_data = {
             '5 - 15': [],
             '2 - 5': [],
@@ -119,6 +141,11 @@ class TopDatasetFrequencyAnalyzer(Analyzer):
                 cosine_top,
                 len(overlap_top)
             ]
+            
+        # Generate Venn diagram for top-20 datasets
+        output_dir = os.path.dirname(filepath)
+        self._generate_venn_diagram(top20_by_period, os.path.join(output_dir, "venn_top20_periods.png"))
+        overlap_report += "Generated Venn diagram of top-20 datasets across periods.\n\n"
 
         table_rows = ['overall cos', 'overall common', 'top20 cos', 'top20 common']
         self._plot_table_similarity(table_data, table_rows, filepath)
@@ -126,6 +153,26 @@ class TopDatasetFrequencyAnalyzer(Analyzer):
         # Save overlap report to a text file
         with open(filepath, 'w') as f:
             f.write(overlap_report)
+
+    def _generate_venn_diagram(self, sets_dict, filepath):
+        """Generate Venn diagram for 3 sets."""
+        try:
+            from matplotlib_venn import venn3
+            
+            plt.figure(figsize=(8, 6))
+            venn = venn3([sets_dict[2], sets_dict[5], sets_dict[15]], 
+                        set_labels=('Period 2', 'Period 5', 'Period 15'))
+            
+            # Set title
+            plt.title('Overlap of Top-20 Datasets Across Periods', fontsize=14)
+            
+            # Save figure
+            plt.tight_layout()
+            plt.savefig(filepath, dpi=300, bbox_inches='tight')
+            plt.close()
+        except ImportError:
+            # If matplotlib_venn is not installed, skip visualization
+            print("matplotlib_venn package is required for Venn diagrams. Install with: pip install matplotlib-venn")
         
     def _plot_table_similarity(self, df, table_rows, filepath):
         # Build DataFrame
