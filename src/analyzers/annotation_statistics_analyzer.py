@@ -16,8 +16,12 @@ class AnnotationStatisticsAnalyzer(Analyzer):
     def analyze(self, data: Dict[str, Dict[str, Any]], output_dir: str = 'outputs') -> str:
         analyzer_dir = self.get_analyzer_output_dir(output_dir)
         output_file = os.path.join(analyzer_dir, 'annotation_statistics.txt')
+        period_filter = 0
 
         df = pd.DataFrame(data.values())
+
+        if period_filter != 0:
+            df = df[df['period'] == period_filter]
 
         def count_matches(col, mapping):
             counts = Counter()
@@ -228,6 +232,7 @@ class AnnotationStatisticsAnalyzer(Analyzer):
         # Write results
         with open(output_file, 'w') as f:
             f.write("=== Annotation Statistics ===\n\n")
+            f.write(f"Selected period: {period_filter}\n\n")
             for section, counts, total in results:
                 f.write(f"{section}:\n")
                 for k, v in counts.items():
