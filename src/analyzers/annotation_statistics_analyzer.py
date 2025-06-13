@@ -39,8 +39,8 @@ class AnnotationStatisticsAnalyzer(Analyzer):
 
         # Human Labels
         mapping = {
-            "yes / implicit yes": ["yes", "implicit yes"],
             "yes for some": ["yes for some"],
+            "yes / implicit yes": ["yes", "implicit yes"],
             "no / machine": ["No / machine labelled"],
             "no information": ["no information", "unsure"]
         }
@@ -66,16 +66,6 @@ class AnnotationStatisticsAnalyzer(Analyzer):
         counts, total = count_matches("Label Source", mapping)
         results.append(("Label Source", counts, total))
 
-        # Compensation
-        mapping = {
-            "no information": ["no information"],
-            "money": ["money"],
-            "volunteer": ["volunteer"],
-            "other": [""]
-        }
-        counts, total = count_matches("Compensation", mapping)
-        results.append(("Compensation", counts, total))
-
         # Labeller Population Rationale
         mapping = {
             "no information": ["no information"],
@@ -83,39 +73,6 @@ class AnnotationStatisticsAnalyzer(Analyzer):
         }
         counts, total = count_matches("Labeller Population Rationale", mapping)
         results.append(("Labeller Population Rationale", counts, total))
-
-        # Total Labellers
-        mapping = {
-            "not mentioned": ["no information"],
-            "mentioned": [""]
-        }
-        counts, total = count_matches("Total Labellers", mapping)
-        results.append(("Total Labellers", counts, total))
-
-        # Overlap
-        mapping = {
-            "yes, for all": ["yes, for all"],
-            "yes, for some": ["yes, for some"],
-            "no": ["no"],
-            "no information": ["no information", "unsure"]
-        }
-        counts, total = count_matches("Overlap", mapping)
-        results.append(("Overlap", counts, total))
-
-        # IRR
-        irr_counts = Counter()
-        overlap_column = df["Overlap"].fillna("no information").str.strip().str.lower()
-        irr_column = df["IRR"].fillna("no information").str.strip().str.lower()
-        for ov_val, irr_val in zip(overlap_column, irr_column):
-            if ov_val == 'no':
-                continue
-            elif ov_val == 'no information':
-                irr_counts['maybe not applicable'] += 1
-            elif irr_val != 'no information' and irr_val != 'not applicable':
-                irr_counts['calculated'] += 1
-            elif irr_val == 'no information':
-                irr_counts['not calculated'] += 1
-        results.append(("IRR", irr_counts, len(df)))
 
         # Prescreening
         mapping = {
@@ -127,6 +84,57 @@ class AnnotationStatisticsAnalyzer(Analyzer):
         }
         counts, total = count_matches("Prescreening", mapping)
         results.append(("Prescreening", counts, total))
+
+        # Compensation
+        mapping = {
+            "no information": ["no information"],
+            "money": ["money"],
+            "volunteer": ["volunteer"],
+            "other": [""]
+        }
+        counts, total = count_matches("Compensation", mapping)
+        results.append(("Compensation", counts, total))
+
+        # Total Labellers
+        mapping = {
+            "not mentioned": ["no information"],
+            "mentioned": [""]
+        }
+        counts, total = count_matches("Total Labellers", mapping)
+        results.append(("Total Labellers", counts, total))
+
+        # Annotators per item
+        counts, total = count_matches("Annotators per item",mapping)
+        results.append(("Annotators per item", counts, total))
+
+        # Overlap
+        mapping = {
+            "yes, for all": ["yes, for all"],
+            "yes, for some": ["yes, for some"],
+            "no information": ["no information", "unsure"],
+            "no": ["no"]
+        }
+        counts, total = count_matches("Overlap", mapping)
+        results.append(("Overlap", counts, total))
+
+        # IRR
+        irr_counts = Counter()
+        overlap_column = df["Overlap"].fillna("no information").str.strip().str.lower()
+        irr_column = df["IRR"].fillna("no information").str.strip().str.lower()
+        total = 0
+        for ov_val, irr_val in zip(overlap_column, irr_column):
+            if ov_val == 'no':
+                continue
+            elif ov_val == 'no information':
+                irr_counts['maybe not applicable'] += 1
+                total += 1
+            elif irr_val != 'no information' and irr_val != 'not applicable':
+                irr_counts['calculated'] += 1
+                total += 1
+            elif irr_val == 'no information':
+                irr_counts['not calculated'] += 1
+                total += 1
+        results.append(("IRR", irr_counts, total))
 
         # Training
         mapping = {
@@ -146,19 +154,27 @@ class AnnotationStatisticsAnalyzer(Analyzer):
 
         # Annotation Schema
         mapping = {
-            "no information": ["no information"],
+            "no information": ["no information", "no"],
             "some schema": [""]
         }
         counts, total = count_matches("a Priori Annotation Schema", mapping)
         results.append(("Annotation Schema", counts, total))
 
         # Annotation Schema Rationale
-        mapping = {
-            "no information": ["no information"],
-            "some schema rationale": [""]
-        }
-        counts, total = count_matches("Annotation Schema Rationale", mapping)
-        results.append(("Annotation Schema Rationale", counts, total))
+        schema_rationale_counts = Counter()
+        schema_column = df["a Priori Annotation Schema"].fillna("no information").str.strip().str.lower()
+        schema_rationale_column = df["Annotation Schema Rationale"].fillna("no information").str.strip().str.lower()
+        total = 0
+        for schema_val, rationale_val in zip(schema_column, schema_rationale_column):
+            if schema_val == 'no information' or schema_val == 'not applicable':
+                continue
+            elif rationale_val != 'no information':
+                schema_rationale_counts["some schema rationale"] += 1
+                total += 1
+            else:
+                schema_rationale_counts["no information"] += 1
+                total +=1 
+        results.append(("Annotation Schema Rationale (if present)", schema_rationale_counts, total))
 
         # Item Population
         mapping = {
@@ -175,6 +191,14 @@ class AnnotationStatisticsAnalyzer(Analyzer):
         }
         counts, total = count_matches("Item Population Rationale", mapping)
         results.append(("Item Population Rationale", counts, total))
+        
+        # Item source
+        mapping = {
+            "no information": ["no information"],
+            "label source given": [""]
+        }
+        counts, total = count_matches("Item Source", mapping)
+        results.append(("Item Source", counts, total))
 
         # Item Sample Size Rationale
         mapping = {
