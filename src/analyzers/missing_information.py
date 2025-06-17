@@ -181,12 +181,13 @@ class MissingInformationAnalyzer(Analyzer):
         
         # Create visualizations
         self._create_visualizations(field_missing_counts, missing_by_period, field_missing_by_period, 
-                                  datasets_by_period, total_fields_by_period, periods, output_dir)
+                                  datasets_by_period, total_fields_by_period, periods,total_missing_count, total_fields_count, output_dir)
         
         return output_file
     
     def _create_visualizations(self, field_missing_counts, missing_by_period, field_missing_by_period,
-                              datasets_by_period, total_fields_by_period, periods, output_dir):
+                              datasets_by_period, total_fields_by_period, periods, total_missing_count,
+                               total_fields_count, output_dir):
         """Create visualizations for missing information analysis."""
         # 1. Create bar chart for top missing fields overall
         self._plot_top_missing_fields(field_missing_counts, output_dir)
@@ -196,6 +197,10 @@ class MissingInformationAnalyzer(Analyzer):
         
         # 3. Create bar chart for top missing fields by period
         self._plot_top_missing_by_period(field_missing_by_period, datasets_by_period, periods, output_dir)
+
+        # 4. Create bar chart for top missing fields by period and overall
+        self._plot_comparison_with_overall(missing_by_period, total_fields_by_period, periods,
+                                       total_missing_count, total_fields_count, output_dir)
         
     def _plot_top_missing_fields(self, field_missing_counts, output_dir):
         """Plot top missing fields across all datasets."""
@@ -336,5 +341,49 @@ class MissingInformationAnalyzer(Analyzer):
         # Save the figure
         analyzer_dir = self.get_analyzer_output_dir(output_dir)
         output_path = os.path.join(analyzer_dir, 'missing_fields_by_period.png')
+        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+    def _plot_comparison_with_overall(self, missing_by_period, total_fields_by_period, periods,
+                                    total_missing_count, total_fields_count, output_dir):
+        """Plot comparison of missing information for top 3 periods and overall."""
+        # Get top 3 periods by dataset count
+        top_periods = sorted(periods, key=lambda p: total_fields_by_period[p])[:3]
+        
+        # Compute missing percentages
+        labels = []
+        percentages = []
+        
+        for period in top_periods:
+            total = total_fields_by_period[period]
+            missing = missing_by_period[period]
+            perc = (missing / total) * 100 if total > 0 else 0
+            labels.append(f"Period {period}")
+            percentages.append(perc)
+        
+        # Add overall
+        overall_percentage = (total_missing_count / total_fields_count) * 100 if total_fields_count > 0 else 0
+        labels.append("Overall")
+        percentages.append(overall_percentage)
+        
+        # Plot
+        plt.figure(figsize=(10, 6))
+        bars = plt.bar(labels, percentages, color='mediumseagreen')
+        
+        # Add value labels
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width() / 2., height + 0.5,
+                    f'{height:.1f}%', ha='center', va='bottom', fontsize=9)
+        
+        plt.title("Missing Information: Periods vs. Overall", fontsize=14)
+        plt.ylabel("Missing Information Percentage", fontsize=12)
+        plt.ylim(0, max(percentages) * 1.2)
+        plt.grid(axis='y', linestyle='--', alpha=0.5)
+        plt.tight_layout()
+        
+        # Save figure
+        analyzer_dir = self.get_analyzer_output_dir(output_dir)
+        output_path = os.path.join(analyzer_dir, 'missing_by_period_vs_overall.png')
         plt.savefig(output_path, dpi=300, bbox_inches='tight')
         plt.close()
