@@ -406,3 +406,80 @@ class FieldImpactAnalyzer(Analyzer):
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, 'field_presence_impact_scatter.png'), dpi=300, bbox_inches='tight')
         plt.close()
+
+        # Existing visualizations code...
+        
+        # Add this new visualization for lowest missing information percentage
+        # Extract all fields that have a "Yes" status
+        all_fields_with_yes = []
+        
+        for result in results:
+            field = result["field"]
+            if "Yes" in result["status_stats"]:
+                yes_stats = result["status_stats"]["Yes"]
+                all_fields_with_yes.append({
+                    "field": field,
+                    "avg_missing": yes_stats["avg_missing"],
+                    "count": yes_stats["count"]
+                })
+        
+        # Sort by lowest missing information percentage when field is documented
+        all_fields_with_yes.sort(key=lambda x: x["avg_missing"])
+        
+        # Take top 10 
+        top_fields = all_fields_with_yes[:min(10, len(all_fields_with_yes))]
+        
+        if top_fields:
+            plt.figure(figsize=(12, 10))
+            
+            fields = [f["field"] for f in top_fields]
+            missing_pct = [f["avg_missing"] for f in top_fields]
+            counts = [f["count"] for f in top_fields]
+            
+            # Create horizontal bar chart
+            bars = plt.barh(range(len(fields)), missing_pct, color='teal', alpha=0.7)
+            
+            # Add count labels on the bars
+            for i, (bar, count) in enumerate(zip(bars, counts)):
+                plt.text(
+                    bar.get_width() + 1, 
+                    bar.get_y() + bar.get_height()/2, 
+                    f"{count} datasets", 
+                    va='center', 
+                    fontsize=8
+                )
+            
+            plt.yticks(range(len(fields)), fields)
+            plt.xlabel('Missing Information % When Field is Documented')
+            plt.title('Fields with Lowest Missing Information When Documented')
+            plt.tight_layout()
+            
+            # Add grid lines
+            plt.grid(axis='x', linestyle='--', alpha=0.3)
+            
+            # Add explanation text
+            plt.figtext(
+                0.5, 0.01, 
+                "Fields at the top are associated with more complete datasets when they are documented.\n"
+                "Number at right shows how many datasets have this field documented.",
+                ha='center', 
+                fontsize=9, 
+                bbox=dict(facecolor='white', alpha=0.8, boxstyle='round')
+            )
+            
+            plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+            plt.savefig(os.path.join(output_dir, 'lowest_missing_fields.png'), dpi=300, bbox_inches='tight')
+            plt.close()
+        
+        # Also add a section to the report about this
+        with open(os.path.join(output_dir, 'lowest_missing_fields.txt'), 'w') as f:
+            f.write("Fields with Lowest Missing Information When Documented\n")
+            f.write("===================================================\n\n")
+            f.write("These fields are associated with the most complete datasets when they are documented:\n\n")
+            
+            for i, field_data in enumerate(top_fields):
+                field = field_data["field"]
+                missing = field_data["avg_missing"]
+                count = field_data["count"]
+                
+                f.write(f"{i+1}. {field}: {missing:.2f}% missing information ({count} datasets)\n")
