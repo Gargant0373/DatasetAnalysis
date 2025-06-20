@@ -92,7 +92,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             "Synthesis Type": "Was the synthesis type described?",
             "Item Population": "Was the population of the items described?",
             "Item Population Rationale": "Was a reason given for choosing this item population?",
-            "Item source": "Was the item source given?",
+            "Item Source": "Was the item source given?",
             "a Priori Sample Size": "Was the sample size chosen before data collection?",
             "Item Sample Size Rationale": "Was a rationale given for the sample size?",
             "a Priori Annotation Schema": "Was the annotation schema created beforehand?",
