@@ -11,16 +11,16 @@ from collections import Counter, defaultdict
 from analyzers.base import register_analyzer, Analyzer
 
 @register_analyzer
-class DocumentationCompletenessAnalyzer(Analyzer):
+class DocumentationCompletenessAnalyzerV2(Analyzer):
     """Analyzer that creates stacked bar charts showing documentation completeness."""
     
     def get_name(self) -> str:
         """Get the human-readable name of the analyzer."""
-        return "Documentation Completeness Analyzer"
+        return "Documentation Completeness Analyzer V2"
     
     def get_description(self) -> str:
         """Get a description of what the analyzer does."""
-        return "Creates stacked bar charts showing documentation completeness by field"
+        return "Version 2 of documentation completeness analyzer"
     
     def analyze(self, data, output_dir='outputs'):
         """
@@ -41,29 +41,31 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         
         # Load field mappings and answer mappings
         field_mapping = self._load_json('data/field_mapping.json')
+        field_mapping_short = self._load_json('data/field_mapping_2.json')
         answer_mapping = self._load_json('data/answer_mapping.json')
         
         # Process the dataset to get standardized answers
-        field_answers_15, standardized_answers_15 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 15)
-        field_answers_5, standardized_answers_5 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 5)
-        field_answers_2, standardized_answers_2 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 2)
-        field_answers_overall, standardized_answers_overall = self._process_fields_and_answers(data, field_mapping, answer_mapping, 0)        # Create the visualization
-        plot_file = self._create_stacked_bar_chart(standardized_answers_15, field_mapping, output_dir, period=15)
-        self._create_stacked_bar_chart(standardized_answers_5, field_mapping, output_dir, period=5)
-        self._create_stacked_bar_chart(standardized_answers_2, field_mapping, output_dir, period=2)
-        self._create_stacked_bar_chart(standardized_answers_overall, field_mapping, output_dir, period=0)
+        field_answers, standardized_answers = self._process_fields_and_answers(data, field_mapping, answer_mapping, 0, True) # Special handling
+        field_answers_2, standardized_answers_2 = self._process_fields_and_answers(data, field_mapping, answer_mapping, 2, True) # Special handling
+        subset = ['Human Labels', 'OG Labels','Label Source','Labeller Population Rationale','Prescreening','Compensation']
+        self._create_stacked_bar_chart_subset(standardized_answers, field_mapping_short, output_dir, subset)
+        subset = ['Training', 'Formal Instructions','Total Labellers','Annotators per item','Label Threshold','Overlap', 'IRR', 'a Priori Annotation Schema', 'Annotation Schema Rationale']
+        self._create_stacked_bar_chart_subset(standardized_answers, field_mapping_short, output_dir, subset)
+        subset = ['Item Population','Item Population Rationale','Item Source','a Priori Sample Size','Item Sample Size Rationale', 'Link to Data']
+        self._create_stacked_bar_chart_subset(standardized_answers, field_mapping_short, output_dir, subset)
+        self._create_stacked_bar_chart_subset(standardized_answers, field_mapping_short, output_dir, [])
 
         # Write comprehensive analysis results for all periods
         self._write_analysis(output_file_txt,
                             {
-                                15: (field_answers_15, standardized_answers_15),
-                                5: (field_answers_5, standardized_answers_5),
+                                #15: (field_answers_15, standardized_answers_15),
+                                #5: (field_answers_5, standardized_answers_5),
                                 2: (field_answers_2, standardized_answers_2),
-                                0: (field_answers_overall, standardized_answers_overall)
+                                0: (field_answers, standardized_answers),
                             }, 
-                            field_mapping)
+                            field_mapping_short)
         # Write analysis results into a csv format
-        self._write_analysis_csv(output_file_csv, standardized_answers_overall, field_mapping)
+        self._write_analysis_csv(output_file_csv, standardized_answers, field_mapping_short)
 
         return output_file_txt
     
@@ -76,13 +78,12 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             print(f"Error loading {file_path}: {e}")
             return {}
     
-    def _process_fields_and_answers(self, data, field_mapping, answer_mapping, period=0):
+    def _process_fields_and_answers(self, data, field_mapping, answer_mapping, period=0, special_handling=False):
         """Process dataset fields and standardize answers."""
         field_answers = defaultdict(list)
         standardized_answers = defaultdict(Counter)
         
         # Additional field mappings (non-dropdown fields)
-        # TODO synthesis type should be considered only where there is overlap synthesis ?
         additional_field_mappings = {
             "Label Source": "Was the label source provided?",
             "Labeller Population Rationale": "Was there a reason provided for the labeller population?",
@@ -96,7 +97,8 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             "a Priori Sample Size": "Was the sample size chosen before data collection?",
             "Item Sample Size Rationale": "Was a rationale given for the sample size?",
             "a Priori Annotation Schema": "Was the annotation schema created beforehand?",
-            "Annotation Schema Rationale": "Was a reason given for annotation schema?"
+            "Annotation Schema Rationale": "Was a reason given for annotation schema?",
+            "Total Labellers": "n/a"
         }
         
         # Update field mapping with additional mappings
@@ -104,8 +106,8 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             if field not in field_mapping:
                 field_mapping[field] = question
 
-        # Deduplicate if the overall period is used
-        if period == 0:
+        # Deduplicate if needed
+        if special_handling == False:
             filtered_data = {}
             seen = set()
 
@@ -122,16 +124,43 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             if dataset_info.get('period') == period or period == 0:
                 for field, value in dataset_info.items():
                     # Only process fields that have mappings
-                    if field in field_mapping:
+                    if field in field_mapping and (special_handling == False or field != "IRR" ):
                         field_answers[field].append(value)
 
                         # Standardize the answer
-                        standardized = self._standardize_answer(value, answer_mapping, field)
+                        standardized = self._standardize_answer(value, answer_mapping, field, special_handling=special_handling)
                         standardized_answers[field][standardized] += 1
+                    elif (special_handling == True and field == "IRR"):
+                        irr_value = value
+                        overlap_value = dataset_info.get("Overlap")
+                        
+                        # Clean up values
+                        irr_clean = str(irr_value).strip().lower() if irr_value else "no information"
+                        overlap_clean = str(overlap_value).strip().lower() if overlap_value else "no information"
+
+                        # Skip if overlap is "no"
+                        if overlap_clean == "no":
+                            continue
+
+                        # Case 1: overlap == "no information"
+                        if overlap_clean in ["no information","nan"]:
+                            standardized = "Maybe"
+                        # Case 2: IRR is given
+                        elif irr_clean not in ["no information", "not applicable"]:
+                            standardized = "Yes"
+                        # Case 3: overlap == "yes" but IRR missing
+                        elif irr_clean == 'not applicable':
+                            standardized = "Not applicable"
+                        else:
+                            standardized = "No"
+
+                        field_answers[field].append(value)
+                        standardized_answers[field][standardized] += 1
+
         
         return field_answers, standardized_answers
     
-    def _standardize_answer(self, value, answer_mapping, field):
+    def _standardize_answer(self, value, answer_mapping, field, special_handling = False):
         """
         Standardize an answer using the answer mapping or simplified rules for non-dropdown fields.
         
@@ -147,7 +176,7 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             return "No"
         
         value_str = str(value).strip()
-        if not value_str or value_str.lower() == 'nan':
+        if (not value_str or value_str.lower() == 'nan') and special_handling == False:
             return "No"
             
         # Handle non-dropdown fields with simpler binary logic
@@ -169,16 +198,19 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             "a Priori Annotation Schema",
             "Annotation Schema Rationale"
         ]
-
-        no_information_fields = [
-            "Human Labels",
-            "OG Labels",
-            "Overlap",
-            "Formal Instructions",
-            "Discussion",
-            "a Priori Sample Size",
-            "a Priori Annotation Schema"
-        ]
+        if special_handling == True:
+            # Treat the field normally 
+            no_information_fields = [ field ]
+        else: 
+            no_information_fields = [
+                "Human Labels",
+                "OG Labels",
+                "Overlap",
+                "Formal Instructions",
+                "Discussion",
+                "a Priori Sample Size",
+                "a Priori Annotation Schema"
+            ]
 
         if field in no_information_fields and value == "No information":
             return "No information"
@@ -197,7 +229,23 @@ class DocumentationCompletenessAnalyzer(Analyzer):
             
             if any(pattern in value_str.lower() for pattern in negative_patterns):
                 return "No"
+            
+            if field in ["a Priori Annotation Schema", "Annotation Schema Rationale"] and special_handling == True:
+                if any(pattern in value_str.lower() for pattern in negative_patterns) or (value_str.lower() in ['no','nan','']):
+                    return "No information"
+            
+            # Special handling for Label Source
+            if field == "Label Source" and special_handling == True:
+                if "turk" in value_str.lower() or "amt" in value_str.lower():
+                    return "MTurk"
+
             return "Yes"
+        
+        # Special handling for OG Labels
+        if field == "OG Labels" and special_handling == True:
+            if value_str.lower() == "external":
+                return "External"
+         
             
         # For dropdown fields, use the answer mapping
         # Try to find exact match in answer mapping
@@ -216,56 +264,54 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         # If no mapping found and value is present, consider it as "Yes"
         return "Yes"
     
-    def _create_stacked_bar_chart(self, standardized_answers, field_mapping, output_dir, sort=False, period=0):
+    def _create_stacked_bar_chart_subset(self, standardized_answers, field_mapping, output_dir, subset):
         """Create a stacked bar chart showing documentation completeness."""
         # Set up the figure with appropriate size and style
-        plt.figure(figsize=(16, 12))
+        if subset == []:
+            plt.figure(figsize=(8, 8))
+        else:    
+            plt.figure(figsize=(8, 4))
         plt.style.use('ggplot')
         
-        # Create a more visually appealing color scheme
         colors = {
             'Yes': '#009E73',            # Teal-green (distinct from red/green confusion)
             'Partially': '#0072B2',      # Blue (safe for most types of colorblindness)
+            'No': "#D50000",             # Orange (distinct from teal and blue)
             'No information': '#444444',
-            'No': '#D55E00',             # Orange (distinct from teal and blue)
-            'Not applicable': '#999999'  # Medium gray (neutral, readable)
         }
 
-        
-        # Setup for hatching (stripes) - more distinctive patterns
-        # hatches = {
-        #     'Yes': '///',
-        #     'Partially': '\\\\',
-        #     'No': 'xxx',
-        #     'Not applicable': '.'
-        # }
+        if subset == [] or "Label Source" in subset:
+            colors['MTurk'] = '#D55E00'
+            colors['External'] = "#006159FF"
+        if subset == [] or "IRR" in subset:
+            colors['Maybe'] = "#D5C700"
         
         # Standard categories in display order
-        categories = ['Yes', 'Partially', 'No information', 'No', 'Not applicable']
-        
-        fields = list(reversed(standardized_answers.keys()))
-        
-        if sort:
-            # Get fields and sort them based on Yes count (descending)
-            fields = sorted(standardized_answers.keys(), 
-                      key=lambda x: standardized_answers[x].get('Yes', 0), 
-                      reverse=True)
-        
-        # Map fields to questions for display
-        questions = [field_mapping.get(field, field) for field in fields]
+        categories = list(colors.keys())
+        # Put maybe after partially
+        if "Maybe" in categories:
+            categories.remove("Maybe")
+            insert_index = categories.index("Partially") + 1 if "Partially" in categories else 1
+            categories.insert(insert_index, "Maybe")
+        if subset != []:
+            fields = list(reversed([field for field in standardized_answers if field in subset]))
+        else: 
+            fields = list(reversed([field for field in standardized_answers]))
+        shortened_fields = [field_mapping.get(field, field) for field in fields]
         
         # Create y-positions for the bars with more spacing
         y_pos = np.arange(len(fields)) * 1.2
         
-        # Prepare data for stacking
-        data_for_plotting = []
-        left_positions = np.zeros(len(fields))
-        
         # Calculate total count for each field for percentage labels
         total_counts = []
         for field in fields:
-            total = sum(standardized_answers[field].values())
+            total = sum(count for cat, count in standardized_answers[field].items() if cat != 'Not applicable')
             total_counts.append(total)
+
+        # Prepare data for stacking
+        data_for_plotting = []
+        left_positions = np.zeros(len(fields))
+        normalizing_constants = np.ones(len(fields)) * np.max(total_counts) / np.array(total_counts)
         
         # For each category, create a bar segment
         for category in categories:
@@ -276,7 +322,8 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         ax = plt.gca()
         bars = []
         for category, counts in data_for_plotting:
-            bar = plt.barh(y_pos, counts, left=left_positions, color=colors[category], 
+            normalized_counts = counts * normalizing_constants
+            bar = plt.barh(y_pos, normalized_counts, left=left_positions, color=colors[category], 
                    edgecolor='white', linewidth=0.5,
                    label=category if category in colors else category, height=0.8)
             bars.append(bar)
@@ -292,29 +339,21 @@ class DocumentationCompletenessAnalyzer(Analyzer):
                             color='white' if category in ['No', 'No information'] else 'black',
                             fontweight='bold')
                     
-            left_positions = left_positions + counts
-
-        if period == 0:
-            title_text = "Overall"
-        else:
-            title_text = f"{period} Year Period"
+            left_positions = left_positions + counts * normalizing_constants
         
         # Enhance the labels and title with better typography
-        plt.yticks(y_pos, questions, fontsize=11, fontweight='bold')
+        plt.yticks(y_pos, shortened_fields, fontsize=11, fontweight='bold')
         plt.xlabel('Count', fontsize=12, fontweight='bold')
-        plt.title(f'Summary Results for Dataset Documentation, {title_text}',
-                 fontsize=16, fontweight='bold', pad=20)
-        
-        # Add subtitle
-        plt.figtext(0.5, 0.93, 'Presence of key information across analyzed datasets', 
-                   fontsize=12, ha='center', fontweight='regular', style='italic')
         
         # Add legend at the bottom right with better styling
         handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
+        label_display_names = {
+            "No information": "No info"
+        }
+        by_label = {label_display_names.get(label, label): handle for label, handle in zip(labels, handles)}
         legend = plt.legend(by_label.values(), by_label.keys(), 
-                          loc='lower right', fontsize=11, framealpha=0.9,
-                          title='Documentation Status', title_fontsize=12)
+                          loc='lower right', fontsize=11, framealpha=0.7,
+                          title='Legend', title_fontsize=12)
         legend.get_frame().set_linewidth(1.0)
         
         # Enhance grid and background
@@ -329,11 +368,16 @@ class DocumentationCompletenessAnalyzer(Analyzer):
         
         # Save the figure
         analyzer_dir = self.get_analyzer_output_dir(output_dir)
-        plot_file = os.path.join(analyzer_dir, f'documentation_completeness_{period}.png')
+        if subset == []:
+            output_name = "documentation_completeness_v2"
+        else:
+            output_name =f"documentation_completeness_subset_{subset[0]}"
+        plot_file = os.path.join(analyzer_dir, output_name)
         plt.savefig(plot_file, dpi=300, bbox_inches='tight')
         plt.close()
         
         return plot_file
+
     def _write_analysis(self, output_file, period_data, field_mapping):
         """
         Write comprehensive analysis results to file for all time periods.
